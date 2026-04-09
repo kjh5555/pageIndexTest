@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { BACKEND_URL } from "../lib/config";
 
 const MODELS: Record<string, { label: string; value: string }[]> = {
   gemini: [
@@ -59,7 +60,7 @@ export default function ApiKeyModal({
     setValidating(true);
     setValidationResult(null);
     try {
-      const res = await fetch("http://localhost:8000/api/validate-key", {
+      const res = await fetch(`${BACKEND_URL}/api/validate-key`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

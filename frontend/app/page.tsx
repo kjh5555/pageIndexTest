@@ -7,7 +7,7 @@ import ChatPanel from "./components/ChatPanel";
 import ApiKeyModal from "./components/ApiKeyModal";
 import { PageIndexDocument } from "@/types";
 
-const BACKEND = "http://localhost:8000";
+import { BACKEND_URL as BACKEND } from "@/app/lib/config";
 const API_KEY_STORAGE = "pageindex_api_key";
 const API_PROVIDER_STORAGE = "pageindex_provider";
 const API_MODEL_STORAGE = "pageindex_model";
