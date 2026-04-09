@@ -141,14 +141,22 @@ class ValidateKeyRequest(BaseModel):
 @app.post("/api/validate-key")
 async def validate_key(req: ValidateKeyRequest, x_api_key: Optional[str] = Header(default=None)):
     """Validate an API key by making a minimal LLM call."""
+    import litellm as _litellm
     _apply_api_key(x_api_key, req.provider)
+    model = req.model.removeprefix("litellm/")
     try:
-        result = llm_completion(model=req.model, prompt="Say 'ok'")
-        if result:
+        response = _litellm.completion(
+            model=model,
+            messages=[{"role": "user", "content": "Say ok"}],
+            max_tokens=5,
+            timeout=15,
+        )
+        content = response.choices[0].message.content or ""
+        if content:
             return {"valid": True}
-        return {"valid": False, "error": "Empty response from model"}
+        return {"valid": False, "error": "모델이 빈 응답을 반환했습니다"}
     except Exception as e:
-        return {"valid": False, "error": str(e)[:200]}
+        return {"valid": False, "error": str(e)[:300]}
 
 
 @app.post("/api/process")
