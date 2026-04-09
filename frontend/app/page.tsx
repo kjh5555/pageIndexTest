@@ -8,12 +8,16 @@ import ApiKeyModal from "./components/ApiKeyModal";
 import { PageIndexDocument } from "@/types";
 
 const BACKEND = "http://localhost:8000";
-const API_KEY_STORAGE = "pageindex_gemini_api_key";
+const API_KEY_STORAGE = "pageindex_api_key";
+const API_PROVIDER_STORAGE = "pageindex_provider";
+const API_MODEL_STORAGE = "pageindex_model";
 
 export default function Home() {
   const [document, setDocument] = useState<PageIndexDocument | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState("");
+  const [apiProvider, setApiProvider] = useState("gemini");
+  const [apiModel, setApiModel] = useState("gemini/gemini-2.5-flash");
   const [showApiModal, setShowApiModal] = useState(false);
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -32,20 +36,27 @@ export default function Home() {
 
   const sseRef = useRef<EventSource | null>(null);
   const apiKeyRef = useRef<string>("");
+  const apiModelRef = useRef<string>("gemini/gemini-2.5-flash");
 
-  // Load API key from localStorage on mount
+  // Load API key/provider/model from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(API_KEY_STORAGE);
-    if (stored) {
-      setApiKey(stored);
-      apiKeyRef.current = stored;
-    }
+    if (stored) { setApiKey(stored); apiKeyRef.current = stored; }
+    const storedProvider = localStorage.getItem(API_PROVIDER_STORAGE);
+    if (storedProvider) setApiProvider(storedProvider);
+    const storedModel = localStorage.getItem(API_MODEL_STORAGE);
+    if (storedModel) { setApiModel(storedModel); apiModelRef.current = storedModel; }
   }, []);
 
-  const handleSaveApiKey = useCallback((key: string) => {
+  const handleSaveApiKey = useCallback((key: string, provider: string, model: string) => {
     setApiKey(key);
     apiKeyRef.current = key;
+    setApiProvider(provider);
+    setApiModel(model);
+    apiModelRef.current = model;
     localStorage.setItem(API_KEY_STORAGE, key);
+    localStorage.setItem(API_PROVIDER_STORAGE, provider);
+    localStorage.setItem(API_MODEL_STORAGE, model);
   }, []);
 
   const apiHeaders = useCallback(
@@ -77,6 +88,7 @@ export default function Home() {
       form.append("file", file);
       let newDocId: string;
       try {
+        if (apiModelRef.current) form.append("model", apiModelRef.current);
         const res = await fetch(`${BACKEND}/api/process`, { method: "POST", body: form, headers: apiHeaders() });
         if (!res.ok) throw new Error("Upload failed");
         const data = await res.json();
@@ -202,6 +214,8 @@ export default function Home() {
         onClose={() => setShowApiModal(false)}
         onSave={handleSaveApiKey}
         currentKey={apiKey}
+        currentProvider={apiProvider}
+        currentModel={apiModel}
       />
       <header className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 bg-white shadow-sm z-10 flex-shrink-0">
         <div className="flex items-center gap-2">

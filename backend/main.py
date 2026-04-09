@@ -68,9 +68,13 @@ def _load_cache_on_startup():
 _load_cache_on_startup()
 
 
-def _apply_api_key(api_key: Optional[str]):
-    """Set GEMINI_API_KEY from request if provided."""
-    if api_key:
+def _apply_api_key(api_key: Optional[str], provider: Optional[str] = None):
+    """Set API key env var from request if provided."""
+    if not api_key:
+        return
+    if provider == "openai":
+        os.environ["OPENAI_API_KEY"] = api_key
+    else:
         os.environ["GEMINI_API_KEY"] = api_key
 
 
@@ -127,6 +131,24 @@ def _run_indexing(doc_id: str, pdf_path: str, model: str, file_hash: str = None)
     except Exception as e:
         processing[doc_id]["status"] = "error"
         processing[doc_id]["error"] = str(e)
+
+
+class ValidateKeyRequest(BaseModel):
+    provider: str
+    model: str
+
+
+@app.post("/api/validate-key")
+async def validate_key(req: ValidateKeyRequest, x_api_key: Optional[str] = Header(default=None)):
+    """Validate an API key by making a minimal LLM call."""
+    _apply_api_key(x_api_key, req.provider)
+    try:
+        result = llm_completion(model=req.model, prompt="Say 'ok'")
+        if result:
+            return {"valid": True}
+        return {"valid": False, "error": "Empty response from model"}
+    except Exception as e:
+        return {"valid": False, "error": str(e)[:200]}
 
 
 @app.post("/api/process")
