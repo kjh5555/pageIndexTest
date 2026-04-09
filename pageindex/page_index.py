@@ -905,11 +905,13 @@ async def verify_toc(page_list, list_result, start_index=1, N=None, model=None):
         if item.get('physical_index') is not None:
             last_physical_index = item['physical_index']
             break
-    
+
+    print(f'[verify_toc] last_physical_index={last_physical_index}, page_count={len(page_list)}')
     # Early return if we don't have valid physical indices
     if last_physical_index is None or last_physical_index < len(page_list)/2:
+        print(f'[verify_toc] early return (no valid indices)')
         return 0, []
-    
+
     # Determine which items to check
     if N is None:
         print('check all items')
@@ -977,7 +979,8 @@ async def meta_processor(page_list, mode=None, toc_content=None, toc_page_list=N
     )
     
     accuracy, incorrect_results = await verify_toc(page_list, toc_with_page_number, start_index=start_index, model=opt.model)
-        
+    print(f'[meta_processor] verify_toc done: accuracy={accuracy}, incorrect={len(incorrect_results)}')
+
     logger.info({
         'mode': 'process_toc_with_page_numbers',
         'accuracy': accuracy,
@@ -994,7 +997,9 @@ async def meta_processor(page_list, mode=None, toc_content=None, toc_page_list=N
         elif mode == 'process_toc_no_page_numbers':
             return await meta_processor(page_list, mode='process_no_toc', start_index=start_index, opt=opt, logger=logger)
         else:
-            raise Exception('Processing failed')
+            # process_no_toc failed verification — return best-effort result anyway
+            print(f'[meta_processor] verification failed (accuracy={accuracy:.0%}), returning best-effort result')
+            return toc_with_page_number
         
  
 async def process_large_node_recursively(node, page_list, opt=None, logger=None):
@@ -1075,12 +1080,13 @@ def page_index_main(doc, opt=None):
 
     print('Parsing PDF...')
     page_list = get_page_tokens(doc, model=opt.model)
-
-    logger.info({'total_page_number': len(page_list)})
-    logger.info({'total_token': sum([page[1] for page in page_list])})
+    print(f'[main] get_page_tokens done, {len(page_list)} pages')
+    print('[main] starting asyncio.run')
 
     async def page_index_builder():
+        print('[main] page_index_builder started')
         structure = await tree_parser(page_list, opt, doc=doc, logger=logger)
+        print('[main] tree_parser done')
         if opt.if_add_node_id == 'yes':
             write_node_id(structure)    
         if opt.if_add_node_text == 'yes':

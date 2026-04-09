@@ -26,7 +26,18 @@ litellm.drop_params = True
 def count_tokens(text, model=None):
     if not text:
         return 0
+    # Gemini models don't have a local tokenizer in litellm; use char-based estimate to avoid API calls
+    if model and "gemini" in str(model).lower():
+        return len(text) // 4
     return litellm.token_counter(model=model, text=text)
+
+
+def _gemini_no_thinking_kwargs(model: str) -> dict:
+    """Return extra kwargs to disable thinking for Gemini 2.5+ models."""
+    if model and "gemini-2.5" in model:
+        # Use extra_body to pass Gemini-specific thinkingConfig (bypasses drop_params)
+        return {"extra_body": {"generationConfig": {"thinkingConfig": {"thinkingBudget": 0}}}}
+    return {}
 
 
 def llm_completion(model, prompt, chat_history=None, return_finish_reason=False):
@@ -34,12 +45,15 @@ def llm_completion(model, prompt, chat_history=None, return_finish_reason=False)
         model = model.removeprefix("litellm/")
     max_retries = 10
     messages = list(chat_history) + [{"role": "user", "content": prompt}] if chat_history else [{"role": "user", "content": prompt}]
+    print(f"[LLM] Calling {model} | prompt length: {len(prompt)} chars")
     for i in range(max_retries):
         try:
             response = litellm.completion(
                 model=model,
                 messages=messages,
                 temperature=0,
+                timeout=300,
+                **_gemini_no_thinking_kwargs(model),
             )
             content = response.choices[0].message.content
             if return_finish_reason:
@@ -64,12 +78,15 @@ async def llm_acompletion(model, prompt):
         model = model.removeprefix("litellm/")
     max_retries = 10
     messages = [{"role": "user", "content": prompt}]
+    print(f"[LLM async] Calling {model} | prompt length: {len(prompt)} chars")
     for i in range(max_retries):
         try:
             response = await litellm.acompletion(
                 model=model,
                 messages=messages,
                 temperature=0,
+                timeout=300,
+                **_gemini_no_thinking_kwargs(model),
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -292,15 +309,16 @@ class JsonLogger:
         self.log_data = []
 
     def log(self, level, message, **kwargs):
-        if isinstance(message, dict):
-            self.log_data.append(message)
-        else:
-            self.log_data.append({'message': message})
-        # Add new message to the log data
-        
-        # Write entire log data to file
-        with open(self._filepath(), "w") as f:
-            json.dump(self.log_data, f, indent=2)
+        try:
+            if isinstance(message, dict):
+                self.log_data.append(message)
+            else:
+                self.log_data.append({'message': message})
+            # Append single entry (avoid rewriting entire file each call)
+            with open(self._filepath(), "a", encoding="utf-8") as f:
+                f.write(json.dumps(self.log_data[-1], ensure_ascii=False) + "\n")
+        except Exception as e:
+            print(f"[logger] warning: {e}")
 
     def info(self, message, **kwargs):
         self.log("INFO", message, **kwargs)
@@ -384,27 +402,39 @@ def add_preface_if_needed(data):
 
 
 
-def get_page_tokens(pdf_path, model=None, pdf_parser="PyPDF2"):
+def get_page_tokens(pdf_path, model=None, pdf_parser="PyMuPDF"):
+    print(f"[get_page_tokens] start, parser={pdf_parser}")
     if pdf_parser == "PyPDF2":
+        print(f"[get_page_tokens] opening PDF with PyPDF2")
         pdf_reader = PyPDF2.PdfReader(pdf_path)
+        print(f"[get_page_tokens] PDF opened, {len(pdf_reader.pages)} pages")
         page_list = []
         for page_num in range(len(pdf_reader.pages)):
+            print(f"[get_page_tokens] extracting page {page_num+1}")
             page = pdf_reader.pages[page_num]
             page_text = page.extract_text()
-            token_length = litellm.token_counter(model=model, text=page_text)
+            print(f"[get_page_tokens] counting tokens page {page_num+1}")
+            token_length = count_tokens(page_text, model=model)
             page_list.append((page_text, token_length))
+        print(f"[get_page_tokens] done, {len(page_list)} pages processed")
         return page_list
     elif pdf_parser == "PyMuPDF":
+        print(f"[get_page_tokens] PyMuPDF path type={type(pdf_path)}, val={str(pdf_path)[:80]}")
         if isinstance(pdf_path, BytesIO):
             pdf_stream = pdf_path
             doc = pymupdf.open(stream=pdf_stream, filetype="pdf")
-        elif isinstance(pdf_path, str) and os.path.isfile(pdf_path) and pdf_path.lower().endswith(".pdf"):
+        elif isinstance(pdf_path, str):
+            print(f"[get_page_tokens] opening string path: exists={os.path.isfile(pdf_path)}, endswith_pdf={pdf_path.lower().endswith('.pdf')}")
             doc = pymupdf.open(pdf_path)
+        else:
+            raise ValueError(f"Unsupported pdf_path type: {type(pdf_path)}")
+        print(f"[get_page_tokens] PyMuPDF opened, {doc.page_count} pages")
         page_list = []
         for page in doc:
             page_text = page.get_text()
-            token_length = litellm.token_counter(model=model, text=page_text)
+            token_length = count_tokens(page_text, model=model)
             page_list.append((page_text, token_length))
+        print(f"[get_page_tokens] PyMuPDF done, {len(page_list)} pages")
         return page_list
     else:
         raise ValueError(f"Unsupported PDF parser: {pdf_parser}")

@@ -1,3 +1,48 @@
+> **📌 이 저장소는 [VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex) 원본을 클론하여 RAG 기능을 직접 테스트하기 위해 만든 포크입니다.**
+> 원본에 없는 Next.js 프론트엔드, FastAPI 백엔드, Gemini API 연동 등을 추가하였으며 한국어 문서 처리를 위한 변경사항이 포함되어 있습니다.
+
+---
+
+## 🇰🇷 변경 사항 (원본 대비)
+
+### 추가된 기능
+| 항목 | 설명 |
+|------|------|
+| **Next.js 프론트엔드** | `frontend/` — PDF 뷰어, 트리 구조 시각화, 채팅 패널 |
+| **FastAPI 백엔드** | `backend/main.py` — REST API + SSE 스트리밍 |
+| **Gemini API 지원** | OpenAI 대신 Google Gemini (`gemini/gemini-2.5-flash`) 사용 |
+| **API 키 UI 입력** | 프론트엔드에서 Gemini API 키 입력 → 백엔드로 전달 |
+| **트리 빌딩 애니메이션** | PDF 처리 중 섹션이 실시간으로 나타나는 SSE 스트리밍 |
+| **우측 채팅 패널** | 문서에 대해 질문하는 RAG 챗봇 (화면 우측 40%) |
+| **PDF 캐싱** | 동일 PDF 재업로드 시 `.pageindex_cache/`에서 즉시 로드 |
+| **JSON 다운로드/업로드** | 생성된 트리 구조를 JSON으로 저장·불러오기 |
+
+### 한국어 문서 처리를 위한 수정
+| 파일 | 변경 내용 |
+|------|-----------|
+| `pageindex/utils.py` | PDF 파서를 PyPDF2 → **PyMuPDF**로 변경 (한글 추출 안정성) |
+| `pageindex/utils.py` | Gemini 모델 토큰 계산 시 API 호출 대신 **글자 수 기반 추정** (`len(text) // 4`) |
+| `pageindex/utils.py` | Gemini 2.5 모델 **thinking 모드 비활성화** (`extra_body` 사용) |
+| `pageindex/utils.py` | LLM 호출 타임아웃 **300초** 설정 |
+| `pageindex/utils.py` | `JsonLogger` 파일 재작성 → **append 방식**으로 변경 (대용량 문서 처리 시 hang 방지) |
+| `pageindex/page_index.py` | `process_no_toc` 검증 실패 시 예외 대신 **best-effort 결과 반환** |
+
+### 실행 방법
+
+```bash
+# 1. 백엔드 실행
+python3.11 -m backend.main
+
+# 2. 프론트엔드 실행
+cd frontend && npm run dev
+
+# 3. 브라우저에서 http://localhost:3000 접속
+# 4. 우측 상단 "Set API Key"에서 Gemini API 키 입력
+# 5. PDF 업로드 → 트리 구조 자동 생성 → 채팅으로 질문
+```
+
+---
+
 <div align="center">
   
 <a href="https://vectify.ai/pageindex" target="_blank">
