@@ -23,14 +23,9 @@ import PyPDF2
 
 app = FastAPI()
 
-_cors_origins = ["http://localhost:3000"]
-_extra_origin = os.environ.get("FRONTEND_URL", "")
-if _extra_origin:
-    _cors_origins.append(_extra_origin.rstrip("/"))
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
