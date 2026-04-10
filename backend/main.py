@@ -99,12 +99,13 @@ def _run_indexing(doc_id: str, pdf_path: str, model: str, file_hash: str = None)
         result = page_index_main(pdf_path, opt)
         print(f"[indexing] page_index_main complete")
 
-        # Extract page text
+        # Extract page text with PyMuPDF (better Korean support)
+        import pymupdf
         pages = []
-        with open(pdf_path, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            for i, page in enumerate(reader.pages, 1):
-                pages.append({"page": i, "content": page.extract_text() or ""})
+        doc_pdf = pymupdf.open(pdf_path)
+        for i, page in enumerate(doc_pdf, 1):
+            pages.append({"page": i, "content": page.get_text() or ""})
+        doc_pdf.close()
 
         documents[doc_id] = {
             "id": doc_id,
