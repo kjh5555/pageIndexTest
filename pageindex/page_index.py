@@ -1087,6 +1087,11 @@ def page_index_main(doc, opt=None):
         print('[main] page_index_builder started')
         structure = await tree_parser(page_list, opt, doc=doc, logger=logger)
         print('[main] tree_parser done')
+        # Diagnostic: check if PDF text extraction worked
+        non_empty_pages = sum(1 for text, _ in page_list if text and text.strip())
+        print(f'[main] PDF text extraction: {non_empty_pages}/{len(page_list)} pages have text')
+        if non_empty_pages == 0:
+            print('[main] WARNING: All pages have empty text — PDF may be image-based/scanned. Summaries will be placeholder.')
         if opt.if_add_node_id == 'yes':
             write_node_id(structure)    
         if opt.if_add_node_text == 'yes':

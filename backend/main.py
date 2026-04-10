@@ -105,6 +105,7 @@ def _run_indexing(doc_id: str, pdf_path: str, model: str, file_hash: str = None)
             pages.append({"page": i, "content": page.get_text() or ""})
         doc_pdf.close()
 
+        has_text = any(p["content"].strip() for p in pages)
         documents[doc_id] = {
             "id": doc_id,
             "type": "pdf",
@@ -114,10 +115,12 @@ def _run_indexing(doc_id: str, pdf_path: str, model: str, file_hash: str = None)
             "page_count": len(pages),
             "structure": result["structure"],
             "pages": pages,
+            "has_text": has_text,
         }
         processing[doc_id]["status"] = "complete"
         processing[doc_id]["structure"] = result["structure"]
         processing[doc_id]["doc_name"] = result.get("doc_name", "")
+        processing[doc_id]["has_text"] = has_text
         # Save to disk cache
         if file_hash:
             try:
@@ -234,7 +237,8 @@ async def _sse_stream(doc_id: str) -> AsyncGenerator[str, None]:
                         yield e
         async for e in stream_cached(structure, 0):
             yield e
-        yield event({"type": "complete", "doc_id": doc_id})
+        has_text = documents[doc_id].get("has_text", True)
+        yield event({"type": "complete", "doc_id": doc_id, "has_text": has_text})
         return
 
     # Wait for indexing to start
@@ -294,7 +298,8 @@ async def _sse_stream(doc_id: str) -> AsyncGenerator[str, None]:
     async for e in stream_nodes(structure, 0):
         yield e
 
-    yield event({"type": "complete", "doc_id": doc_id})
+    has_text = processing[doc_id].get("has_text", True)
+    yield event({"type": "complete", "doc_id": doc_id, "has_text": has_text})
 
 
 @app.get("/api/progress/{doc_id}")
@@ -319,6 +324,7 @@ async def list_documents():
             "doc_id": doc["id"],
             "doc_name": doc["doc_name"],
             "page_count": doc.get("page_count", 0),
+            "has_text": doc.get("has_text", True),
         }
         for doc in documents.values()
     ]

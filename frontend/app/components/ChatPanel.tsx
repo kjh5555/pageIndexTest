@@ -15,6 +15,7 @@ interface DocListItem {
   doc_id: string;
   doc_name: string;
   page_count: number;
+  has_text?: boolean;
 }
 
 interface ChatPanelProps {
@@ -37,6 +38,10 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList 
   useEffect(() => {
     setSelectedDocId(docId);
   }, [docId]);
+
+  const isImagePdf = selectedDocId
+    ? (docList.find((d) => d.doc_id === selectedDocId)?.has_text === false)
+    : false;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -125,16 +130,26 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList 
         )}
       </div>
 
+      {/* Image PDF warning */}
+      {isImagePdf && (
+        <div className="mx-3 mt-2 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-700 flex items-start gap-2 flex-shrink-0">
+          <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span>이미지 기반 PDF라 채팅을 지원하지 않습니다.</span>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-6">
             <p className="text-sm text-gray-400">
               {selectedDocId
-                ? "문서에 대해 질문해보세요"
+                ? (isImagePdf ? "텍스트를 추출할 수 없는 문서입니다" : "문서에 대해 질문해보세요")
                 : "위에서 문서를 선택해주세요"}
             </p>
-            {selectedDocId && (
+            {selectedDocId && !isImagePdf && (
               <div className="mt-3 flex flex-wrap gap-2 justify-center">
                 {["이 문서는 어떤 내용인가요?", "핵심 내용을 요약해주세요", "주요 섹션은 무엇인가요?"].map((q) => (
                   <button
@@ -205,8 +220,8 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={!selectedDocId || loading}
-            placeholder={selectedDocId ? "질문을 입력하세요... (Enter로 전송)" : "문서를 선택해주세요"}
+            disabled={!selectedDocId || loading || isImagePdf}
+            placeholder={!selectedDocId ? "문서를 선택해주세요" : isImagePdf ? "이미지 기반 PDF — 채팅 불가" : "질문을 입력하세요... (Enter로 전송)"}
             className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-50 disabled:text-gray-400 max-h-32 overflow-y-auto"
             style={{ height: "auto" }}
             onInput={(e) => {
@@ -217,7 +232,7 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList 
           />
           <button
             onClick={handleSend}
-            disabled={!selectedDocId || !input.trim() || loading}
+            disabled={!selectedDocId || !input.trim() || loading || isImagePdf}
             className="flex-shrink-0 w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white flex items-center justify-center transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

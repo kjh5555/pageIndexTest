@@ -28,6 +28,7 @@ interface SidebarProps {
   docList?: DocListItem[];
   currentDocId?: string | null;
   onLoadDocument?: (docId: string) => void;
+  hasText?: boolean;
 }
 
 export default function Sidebar({
@@ -43,6 +44,7 @@ export default function Sidebar({
   docList = [],
   currentDocId,
   onLoadDocument,
+  hasText = true,
 }: SidebarProps) {
   const showBuilding = isBuilding || (buildingNodes.length > 0 && !document);
 
@@ -87,6 +89,16 @@ export default function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Scanned PDF warning */}
+      {!hasText && !isBuilding && (document || buildingNodes.length > 0) && (
+        <div className="mx-3 mb-2 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-700 flex items-start gap-2">
+          <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span>이미지 기반 PDF입니다. 텍스트를 추출할 수 없어 요약이 제공되지 않습니다.</span>
+        </div>
+      )}
 
       {/* Tree content */}
       <div className="flex-1 overflow-y-auto p-2">

@@ -33,8 +33,9 @@ export default function Home() {
   const [buildStatus, setBuildStatus] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [hasText, setHasText] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
-  const [docList, setDocList] = useState<{doc_id: string; doc_name: string; page_count: number}[]>([]);
+  const [docList, setDocList] = useState<{doc_id: string; doc_name: string; page_count: number; has_text: boolean}[]>([]);
 
   const sseRef = useRef<EventSource | null>(null);
   const apiKeyRef = useRef<string>("");
@@ -100,6 +101,7 @@ export default function Home() {
       setBuildingNodes([]);
       setActiveNodeId(null);
       setHighlightedNodeIds([]);
+      setHasText(true);
       setIsProcessing(true);
       setIsBuilding(true);
       setBuildStatus("Uploading PDF...");
@@ -142,6 +144,7 @@ export default function Home() {
           setIsBuilding(false);
           setIsProcessing(false);
           setBuildStatus("Complete!");
+          setHasText(msg.has_text !== false);
           es.close();
           fetch(`${BACKEND}/api/structure/${newDocId}`, { headers: apiHeaders() })
             .then((r) => {
@@ -294,6 +297,7 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
             docList={docList}
             currentDocId={docId}
             onLoadDocument={handleLoadDocument}
+            hasText={hasText}
           />
         </div>
 

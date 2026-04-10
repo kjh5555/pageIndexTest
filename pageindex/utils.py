@@ -609,9 +609,12 @@ def add_node_text_with_labels(node, pdf_pages):
 
 
 async def generate_node_summary(node, model=None):
+    text = (node.get('text') or "").strip()
+    if not text:
+        return "텍스트를 추출할 수 없습니다."
     prompt = f"""You are given a part of a document. Generate a concise description in Korean about the main points covered in this section.
 
-    Partial Document Text: {node['text']}
+    Partial Document Text: {text}
 
     한국어로 간결하게 설명을 작성하세요. 다른 텍스트 없이 설명만 반환하세요.
     """
