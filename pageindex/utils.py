@@ -129,6 +129,9 @@ def extract_json(content):
         json_content = json_content.replace('None', 'null')  # Replace Python None with JSON null
         json_content = json_content.replace('\n', ' ').replace('\r', ' ')  # Remove newlines
         json_content = ' '.join(json_content.split())  # Normalize whitespace
+        # Fix invalid \uXXXX escape sequences (e.g. from Korean docs)
+        import re as _re
+        json_content = _re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', json_content)
 
         # Attempt to parse and return the JSON object
         return json.loads(json_content)
