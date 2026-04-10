@@ -168,29 +168,7 @@ export default function Home() {
     []
   );
 
-  const handleJsonUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const data = JSON.parse(ev.target?.result as string);
-          setDocument(data);
-          setBuildingNodes([]);
-          setActiveNodeId(null);
-          setHighlightedNodeIds([]);
-        } catch {
-          alert("Invalid JSON file");
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    },
-    []
-  );
-
-  const handlePageSelect = useCallback((page: number, nodeId: string) => {
+const handlePageSelect = useCallback((page: number, nodeId: string) => {
     setTargetPage(page);
     setActiveNodeId(nodeId);
   }, []);
@@ -283,7 +261,6 @@ export default function Home() {
             activeNodeId={activeNodeId}
             highlightedNodeIds={highlightedNodeIds}
             onPageSelect={handlePageSelect}
-            onJsonUpload={handleJsonUpload}
             onDownloadJson={handleDownloadJson}
           />
         </div>

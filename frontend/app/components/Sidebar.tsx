@@ -18,7 +18,6 @@ interface SidebarProps {
   activeNodeId: string | null;
   highlightedNodeIds: string[];
   onPageSelect: (page: number, nodeId: string) => void;
-  onJsonUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDownloadJson?: () => void;
 }
 
@@ -31,7 +30,6 @@ export default function Sidebar({
   activeNodeId,
   highlightedNodeIds,
   onPageSelect,
-  onJsonUpload,
   onDownloadJson,
 }: SidebarProps) {
   const showBuilding = isBuilding || (buildingNodes.length > 0 && !document);
@@ -58,20 +56,6 @@ export default function Sidebar({
                   JSON
                 </button>
               )}
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={onJsonUpload}
-                />
-                <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  Load JSON
-                </span>
-              </label>
             </div>
           )}
         </div>
@@ -158,7 +142,7 @@ export default function Sidebar({
               </svg>
             </div>
             <p className="text-sm text-gray-400">
-              Upload a PDF to auto-generate its structure, or load a JSON file
+              PDF를 업로드하면 자동으로 구조를 분석합니다
             </p>
           </div>
         )}
