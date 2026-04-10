@@ -8,7 +8,8 @@ import ApiKeyModal from "./components/ApiKeyModal";
 import { PageIndexDocument } from "@/types";
 
 import { BACKEND_URL as BACKEND } from "@/app/lib/config";
-const API_KEY_STORAGE = "pageindex_api_key";
+import { encryptValue, decryptValue } from "@/app/lib/crypto";
+const API_KEY_STORAGE = "pageindex_api_key_enc";
 const API_PROVIDER_STORAGE = "pageindex_provider";
 const API_MODEL_STORAGE = "pageindex_model";
 
@@ -38,14 +39,18 @@ export default function Home() {
   const apiKeyRef = useRef<string>("");
   const apiModelRef = useRef<string>("gemini/gemini-2.5-flash");
 
-  // Load API key/provider/model from localStorage on mount
+  // Load API key/provider/model from sessionStorage on mount (encrypted)
   useEffect(() => {
-    const stored = localStorage.getItem(API_KEY_STORAGE);
-    if (stored) { setApiKey(stored); apiKeyRef.current = stored; }
-    const storedProvider = localStorage.getItem(API_PROVIDER_STORAGE);
+    const storedProvider = sessionStorage.getItem(API_PROVIDER_STORAGE);
     if (storedProvider) setApiProvider(storedProvider);
-    const storedModel = localStorage.getItem(API_MODEL_STORAGE);
+    const storedModel = sessionStorage.getItem(API_MODEL_STORAGE);
     if (storedModel) { setApiModel(storedModel); apiModelRef.current = storedModel; }
+    const encKey = sessionStorage.getItem(API_KEY_STORAGE);
+    if (encKey) {
+      decryptValue(encKey).then((key) => {
+        if (key) { setApiKey(key); apiKeyRef.current = key; }
+      });
+    }
   }, []);
 
   const handleSaveApiKey = useCallback((key: string, provider: string, model: string) => {
@@ -54,9 +59,9 @@ export default function Home() {
     setApiProvider(provider);
     setApiModel(model);
     apiModelRef.current = model;
-    localStorage.setItem(API_KEY_STORAGE, key);
-    localStorage.setItem(API_PROVIDER_STORAGE, provider);
-    localStorage.setItem(API_MODEL_STORAGE, model);
+    encryptValue(key).then((enc) => sessionStorage.setItem(API_KEY_STORAGE, enc));
+    sessionStorage.setItem(API_PROVIDER_STORAGE, provider);
+    sessionStorage.setItem(API_MODEL_STORAGE, model);
   }, []);
 
   const apiHeaders = useCallback(
