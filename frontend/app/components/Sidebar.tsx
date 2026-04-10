@@ -9,6 +9,12 @@ export interface BuildingNode extends PageNode {
   animating?: boolean;
 }
 
+interface DocListItem {
+  doc_id: string;
+  doc_name: string;
+  page_count: number;
+}
+
 interface SidebarProps {
   document: PageIndexDocument | null;
   buildingNodes: BuildingNode[];
@@ -19,6 +25,9 @@ interface SidebarProps {
   highlightedNodeIds: string[];
   onPageSelect: (page: number, nodeId: string) => void;
   onDownloadJson?: () => void;
+  docList?: DocListItem[];
+  currentDocId?: string | null;
+  onLoadDocument?: (docId: string) => void;
 }
 
 export default function Sidebar({
@@ -31,6 +40,9 @@ export default function Sidebar({
   highlightedNodeIds,
   onPageSelect,
   onDownloadJson,
+  docList = [],
+  currentDocId,
+  onLoadDocument,
 }: SidebarProps) {
   const showBuilding = isBuilding || (buildingNodes.length > 0 && !document);
 
@@ -147,6 +159,30 @@ export default function Sidebar({
           </div>
         )}
       </div>
+      {/* Document history */}
+      {docList.length > 0 && (
+        <div className="flex-shrink-0 border-t border-gray-100">
+          <div className="px-3 py-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">처리된 문서</p>
+            <div className="space-y-0.5 max-h-40 overflow-y-auto">
+              {docList.map((item) => (
+                <button
+                  key={item.doc_id}
+                  onClick={() => onLoadDocument?.(item.doc_id)}
+                  className={`w-full text-left px-2 py-1.5 rounded-md text-xs transition-colors truncate ${
+                    item.doc_id === currentDocId
+                      ? "bg-blue-50 text-blue-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="truncate block">{item.doc_name.replace(/\.pdf$/i, "")}</span>
+                  <span className="text-gray-400">{item.page_count}p</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

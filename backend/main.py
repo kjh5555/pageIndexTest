@@ -312,6 +312,19 @@ async def progress_stream(doc_id: str, api_key: Optional[str] = Query(default=No
     )
 
 
+@app.get("/api/documents")
+async def list_documents():
+    """Return list of all cached/processed documents."""
+    return [
+        {
+            "doc_id": doc["id"],
+            "doc_name": doc["doc_name"],
+            "page_count": doc.get("page_count", 0),
+        }
+        for doc in documents.values()
+    ]
+
+
 @app.get("/api/structure/{doc_id}")
 async def get_structure(doc_id: str):
     """Return the full document structure."""

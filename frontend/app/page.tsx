@@ -34,10 +34,20 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [docList, setDocList] = useState<{doc_id: string; doc_name: string; page_count: number}[]>([]);
 
   const sseRef = useRef<EventSource | null>(null);
   const apiKeyRef = useRef<string>("");
   const apiModelRef = useRef<string>("gemini/gemini-2.5-flash");
+
+  const fetchDocList = useCallback(() => {
+    fetch(`${BACKEND}/api/documents`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setDocList(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { fetchDocList(); }, [fetchDocList]);
 
   // Load API key/provider/model from sessionStorage on mount (encrypted)
   useEffect(() => {
@@ -142,6 +152,7 @@ export default function Home() {
               if (data?.structure?.length > 0) {
                 setDocument({ doc_name: data.doc_name, structure: data.structure });
                 setBuildingNodes([]);
+                fetchDocList();
               } else {
                 setBuildStatus("Warning: Empty structure returned");
               }
@@ -192,6 +203,23 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
     setTargetPage(page);
     setHighlightedNodeIds(nodeIds);
   }, []);
+
+  const handleLoadDocument = useCallback((docId: string) => {
+    fetch(`${BACKEND}/api/structure/${docId}`, { headers: apiHeaders() })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.structure?.length > 0) {
+          setDocument({ doc_name: data.doc_name, structure: data.structure });
+          setDocId(docId);
+          setBuildingNodes([]);
+          setActiveNodeId(null);
+          setHighlightedNodeIds([]);
+          setActivePage(1);
+          setTargetPage(1);
+        }
+      })
+      .catch(() => {});
+  }, [apiHeaders]);
 
   const docName = document?.doc_name ?? (isBuilding || buildingNodes.length > 0 ? "Processing..." : null);
 
@@ -262,6 +290,9 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
             highlightedNodeIds={highlightedNodeIds}
             onPageSelect={handlePageSelect}
             onDownloadJson={handleDownloadJson}
+            docList={docList}
+            currentDocId={docId}
+            onLoadDocument={handleLoadDocument}
           />
         </div>
 
