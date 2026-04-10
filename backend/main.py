@@ -19,8 +19,6 @@ from pageindex import page_index_main
 from pageindex.retrieve import get_document_structure, get_page_content, get_document
 from pageindex.utils import llm_completion, ConfigLoader, remove_fields
 
-import PyPDF2
-
 app = FastAPI()
 
 app.add_middleware(
