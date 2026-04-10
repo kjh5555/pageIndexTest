@@ -609,11 +609,11 @@ def add_node_text_with_labels(node, pdf_pages):
 
 
 async def generate_node_summary(node, model=None):
-    prompt = f"""You are given a part of a document, your task is to generate a description of the partial document about what are main points covered in the partial document.
+    prompt = f"""You are given a part of a document. Generate a concise description in Korean about the main points covered in this section.
 
     Partial Document Text: {node['text']}
-    
-    Directly return the description, do not include any other text.
+
+    한국어로 간결하게 설명을 작성하세요. 다른 텍스트 없이 설명만 반환하세요.
     """
     response = await llm_acompletion(model, prompt)
     return response
@@ -653,12 +653,12 @@ def create_clean_structure_for_description(structure):
 
 
 def generate_doc_description(structure, model=None):
-    prompt = f"""Your are an expert in generating descriptions for a document.
-    You are given a structure of a document. Your task is to generate a one-sentence description for the document, which makes it easy to distinguish the document from other documents.
-        
+    prompt = f"""You are an expert in generating descriptions for a document.
+    You are given a structure of a document. Generate a one-sentence description in Korean that makes it easy to distinguish this document from others.
+
     Document Structure: {structure}
-    
-    Directly return the description, do not include any other text.
+
+    한국어로 한 문장으로 설명을 작성하세요. 다른 텍스트 없이 설명만 반환하세요.
     """
     response = llm_completion(model, prompt)
     return response
