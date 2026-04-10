@@ -156,7 +156,13 @@ async def validate_key(req: ValidateKeyRequest, x_api_key: Optional[str] = Heade
             return {"valid": True}
         return {"valid": False, "error": "모델이 빈 응답을 반환했습니다"}
     except Exception as e:
-        return {"valid": False, "error": str(e)[:300]}
+        err = str(e)
+        # Extract human-readable message from litellm/API errors
+        import re as _re
+        match = _re.search(r'"message":\s*"([^"]+)"', err)
+        if match:
+            return {"valid": False, "error": match.group(1)}
+        return {"valid": False, "error": err[:150]}
 
 
 @app.post("/api/process")
