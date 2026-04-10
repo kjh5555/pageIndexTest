@@ -71,6 +71,11 @@ export default function Home() {
       if (!file) return;
       e.target.value = "";
 
+      if (!apiKeyRef.current) {
+        alert("API 키를 먼저 설정하고 검증해주세요.\n우측 상단 'Set API Key' 버튼을 눌러주세요.");
+        return;
+      }
+
       const url = URL.createObjectURL(file);
       setPdfUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return url; });
       setTargetPage(1);

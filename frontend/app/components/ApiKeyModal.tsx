@@ -38,6 +38,7 @@ export default function ApiKeyModal({
   const [key, setKey] = useState(currentKey);
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [isValidated, setIsValidated] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -45,6 +46,7 @@ export default function ApiKeyModal({
       setModel(currentModel);
       setKey(currentKey);
       setValidationResult(null);
+      setIsValidated(false);
     }
   }, [open, currentKey, currentProvider, currentModel]);
 
@@ -53,6 +55,7 @@ export default function ApiKeyModal({
     setProvider(p);
     setModel(MODELS[p][0].value);
     setValidationResult(null);
+    setIsValidated(false);
   };
 
   const handleValidate = async () => {
@@ -71,6 +74,7 @@ export default function ApiKeyModal({
       const data = await res.json();
       if (data.valid) {
         setValidationResult({ ok: true, msg: "유효한 API 키입니다." });
+        setIsValidated(true);
       } else {
         setValidationResult({ ok: false, msg: data.error || "유효하지 않은 키입니다." });
       }
@@ -143,7 +147,7 @@ export default function ApiKeyModal({
             <input
               type="password"
               value={key}
-              onChange={(e) => { setKey(e.target.value); setValidationResult(null); }}
+              onChange={(e) => { setKey(e.target.value); setValidationResult(null); setIsValidated(false); }}
               placeholder={provider === "gemini" ? "AIza..." : "sk-..."}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 font-mono"
             />
@@ -176,7 +180,7 @@ export default function ApiKeyModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={!key.trim()}
+            disabled={!isValidated}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             저장
