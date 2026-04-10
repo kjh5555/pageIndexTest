@@ -11,19 +11,32 @@ interface Message {
   reasoning?: string;
 }
 
+interface DocListItem {
+  doc_id: string;
+  doc_name: string;
+  page_count: number;
+}
+
 interface ChatPanelProps {
   docId: string | null;
   docName?: string | null;
   onNavigate: (page: number, nodeIds: string[]) => void;
   apiKey?: string;
+  docList?: DocListItem[];
 }
 
-export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPanelProps) {
+export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList = [] }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(docId);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync selectedDocId when docId prop changes
+  useEffect(() => {
+    setSelectedDocId(docId);
+  }, [docId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,7 +44,7 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
 
   const handleSend = async () => {
     const q = input.trim();
-    if (!q || !docId || loading) return;
+    if (!q || !selectedDocId || loading) return;
 
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: q }]);
@@ -44,7 +57,7 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
           "Content-Type": "application/json",
           ...(apiKey ? { "x-api-key": apiKey } : {}),
         },
-        body: JSON.stringify({ doc_id: docId, question: q }),
+        body: JSON.stringify({ doc_id: selectedDocId, question: q }),
       });
 
       if (!res.ok) {
@@ -88,13 +101,27 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
   return (
     <div className="flex flex-col h-full bg-white border-t border-gray-200">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0">
-        <div className="w-2 h-2 rounded-full bg-green-400" />
-        <span className="text-sm font-semibold text-gray-700 truncate">
-          {docName ? `「${docName.replace(/\.pdf$/i, "")}」에 대해 질문하기` : "문서 질문"}
-        </span>
-        {!docId && (
-          <span className="text-xs text-gray-400 ml-auto">PDF를 먼저 업로드하세요</span>
+      <div className="flex flex-col gap-1.5 px-4 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+          <span className="text-sm font-semibold text-gray-700">문서 질문</span>
+          {!selectedDocId && (
+            <span className="text-xs text-gray-400 ml-auto">PDF를 먼저 처리하세요</span>
+          )}
+        </div>
+        {docList.length > 0 && (
+          <select
+            value={selectedDocId ?? ""}
+            onChange={(e) => { setSelectedDocId(e.target.value || null); setMessages([]); }}
+            className="w-full text-xs rounded-md border border-gray-200 px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            <option value="">문서를 선택하세요</option>
+            {docList.map((d) => (
+              <option key={d.doc_id} value={d.doc_id}>
+                {d.doc_name.replace(/\.pdf$/i, "")} ({d.page_count}p)
+              </option>
+            ))}
+          </select>
         )}
       </div>
 
@@ -103,11 +130,11 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
         {messages.length === 0 && (
           <div className="text-center py-6">
             <p className="text-sm text-gray-400">
-              {docId
+              {selectedDocId
                 ? "문서에 대해 질문해보세요"
-                : "PDF를 먼저 처리해야 채팅이 가능합니다"}
+                : "위에서 문서를 선택해주세요"}
             </p>
-            {docId && (
+            {selectedDocId && (
               <div className="mt-3 flex flex-wrap gap-2 justify-center">
                 {["이 문서는 어떤 내용인가요?", "핵심 내용을 요약해주세요", "주요 섹션은 무엇인가요?"].map((q) => (
                   <button
@@ -178,8 +205,8 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={!docId || loading}
-            placeholder={docId ? "질문을 입력하세요... (Enter로 전송)" : "PDF를 먼저 처리하세요"}
+            disabled={!selectedDocId || loading}
+            placeholder={selectedDocId ? "질문을 입력하세요... (Enter로 전송)" : "문서를 선택해주세요"}
             className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-50 disabled:text-gray-400 max-h-32 overflow-y-auto"
             style={{ height: "auto" }}
             onInput={(e) => {
@@ -190,7 +217,7 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey }: ChatPa
           />
           <button
             onClick={handleSend}
-            disabled={!docId || !input.trim() || loading}
+            disabled={!selectedDocId || !input.trim() || loading}
             className="flex-shrink-0 w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white flex items-center justify-center transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -266,7 +266,7 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
           {/* Chat toggle */}
           <button
             onClick={() => setChatOpen((v) => !v)}
-            disabled={!document}
+            disabled={docList.length === 0}
             className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               chatOpen ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
             }`}
@@ -310,7 +310,7 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
 
           {chatOpen && (
             <div className="w-[40%] flex-shrink-0 border-l border-gray-200 overflow-hidden">
-              <ChatPanel docId={document ? docId : null} docName={document?.doc_name ?? null} onNavigate={handleChatNavigate} apiKey={apiKey} />
+              <ChatPanel docId={document ? docId : null} docName={document?.doc_name ?? null} onNavigate={handleChatNavigate} apiKey={apiKey} docList={docList} />
             </div>
           )}
         </div>
