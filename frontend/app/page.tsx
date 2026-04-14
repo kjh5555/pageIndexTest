@@ -142,7 +142,6 @@ export default function Home() {
           setBuildingNodes((prev) => [...prev, msg.node as BuildingNode]);
         } else if (msg.type === "complete") {
           setIsBuilding(false);
-          setIsProcessing(false);
           setBuildStatus("Complete!");
           setHasText(msg.has_text !== false);
           es.close();
@@ -159,10 +158,12 @@ export default function Home() {
               } else {
                 setBuildStatus("Warning: Empty structure returned");
               }
+              setIsProcessing(false);
             })
             .catch((err) => {
               console.error("Failed to load structure:", err);
               setBuildStatus("Error loading structure: " + err.message);
+              setIsProcessing(false);
               // Keep buildingNodes visible as fallback
             });
         } else if (msg.type === "error") {
