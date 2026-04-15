@@ -23,10 +23,12 @@ interface ChatPanelProps {
   docName?: string | null;
   onNavigate: (page: number, nodeIds: string[]) => void;
   apiKey?: string;
+  apiProvider?: string;
+  apiModel?: string;
   docList?: DocListItem[];
 }
 
-export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList = [] }: ChatPanelProps) {
+export default function ChatPanel({ docId, docName, onNavigate, apiKey, apiProvider, apiModel, docList = [] }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ export default function ChatPanel({ docId, docName, onNavigate, apiKey, docList 
           "Content-Type": "application/json",
           ...(apiKey ? { "x-api-key": apiKey } : {}),
         },
-        body: JSON.stringify({ doc_id: selectedDocId, question: q }),
+        body: JSON.stringify({ doc_id: selectedDocId, question: q, provider: apiProvider, model: apiModel }),
       });
 
       if (!res.ok) {

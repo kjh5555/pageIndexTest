@@ -327,7 +327,7 @@ const handlePageSelect = useCallback((page: number, nodeId: string) => {
 
           {chatOpen && (
             <div className="w-[40%] flex-shrink-0 border-l border-gray-200 overflow-hidden">
-              <ChatPanel docId={document ? docId : null} docName={document?.doc_name ?? null} onNavigate={handleChatNavigate} apiKey={apiKey} docList={docList} />
+              <ChatPanel docId={document ? docId : null} docName={document?.doc_name ?? null} onNavigate={handleChatNavigate} apiKey={apiKey} apiProvider={apiProvider} apiModel={apiModel} docList={docList} />
             </div>
           )}
         </div>

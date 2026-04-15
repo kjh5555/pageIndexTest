@@ -349,6 +349,8 @@ async def get_structure(doc_id: str):
 class ChatRequest(BaseModel):
     doc_id: str
     question: str
+    provider: Optional[str] = None
+    model: Optional[str] = None
 
 
 @app.post("/api/chat")
@@ -358,10 +360,11 @@ async def chat(req: ChatRequest, x_api_key: Optional[str] = Header(default=None)
         raise HTTPException(404, "Document not found. Please process a PDF first.")
 
     doc = documents[req.doc_id]
-    doc_model = doc.get("model", "")
-    provider = doc_model.split("/")[0] if doc_model and "/" in doc_model else None
-    _apply_api_key(x_api_key, provider)
-    opt = ConfigLoader().load({"model": doc_model} if doc_model else None)
+    # Use provider/model from request if sent; fall back to what was stored when doc was processed
+    resolved_provider = req.provider or doc.get("model", "").split("/")[0] or None
+    resolved_model = req.model or doc.get("model", "") or None
+    _apply_api_key(x_api_key, resolved_provider)
+    opt = ConfigLoader().load({"model": resolved_model} if resolved_model else None)
     model = opt.model
 
     # Step 1: Get structure (without text to save tokens)
