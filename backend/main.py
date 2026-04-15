@@ -69,11 +69,14 @@ _load_cache_on_startup()
 def _apply_api_key(api_key: Optional[str], provider: Optional[str] = None):
     """Set API key env var from request if provided."""
     if not api_key:
+        print(f"[api_key] No API key provided")
         return
     if provider == "openai":
         os.environ["OPENAI_API_KEY"] = api_key
+        print(f"[api_key] Set OPENAI_API_KEY (provider={provider})")
     else:
         os.environ["GEMINI_API_KEY"] = api_key
+        print(f"[api_key] Set GEMINI_API_KEY (provider={provider})")
 
 
 def _flatten_nodes(nodes: list, result: list = None) -> list:
@@ -179,6 +182,7 @@ async def process_pdf(
     """Upload a PDF and start indexing. Returns doc_id."""
     # Use explicit provider if sent; fall back to inferring from model string prefix
     resolved_provider = provider or (model.split("/")[0] if model and "/" in model else None)
+    print(f"[process] received provider={provider!r}, model={model!r} → resolved_provider={resolved_provider!r}")
     _apply_api_key(x_api_key, resolved_provider)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files supported")
