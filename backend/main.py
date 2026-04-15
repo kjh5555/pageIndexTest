@@ -116,11 +116,13 @@ def _run_indexing(doc_id: str, pdf_path: str, model: str, file_hash: str = None)
             "structure": result["structure"],
             "pages": pages,
             "has_text": has_text,
+            "model": model or "",
         }
         processing[doc_id]["status"] = "complete"
         processing[doc_id]["structure"] = result["structure"]
         processing[doc_id]["doc_name"] = result.get("doc_name", "")
         processing[doc_id]["has_text"] = has_text
+        processing[doc_id]["model"] = model
         # Save to disk cache
         if file_hash:
             try:
@@ -174,7 +176,8 @@ async def process_pdf(
     x_api_key: Optional[str] = Header(default=None),
 ):
     """Upload a PDF and start indexing. Returns doc_id."""
-    _apply_api_key(x_api_key)
+    provider = model.split("/")[0] if model and "/" in model else None
+    _apply_api_key(x_api_key, provider)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files supported")
 
@@ -350,7 +353,9 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat(req: ChatRequest, x_api_key: Optional[str] = Header(default=None)):
     """RAG chat endpoint: tree search + answer generation."""
-    _apply_api_key(x_api_key)
+    doc_model = documents.get(req.doc_id, {}).get("model", "") if req.doc_id in documents else ""
+    provider = doc_model.split("/")[0] if doc_model and "/" in doc_model else None
+    _apply_api_key(x_api_key, provider)
     if req.doc_id not in documents:
         raise HTTPException(404, "Document not found. Please process a PDF first.")
 
