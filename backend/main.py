@@ -173,11 +173,13 @@ async def validate_key(req: ValidateKeyRequest, x_api_key: Optional[str] = Heade
 async def process_pdf(
     file: UploadFile = File(...),
     model: str = None,
+    provider: str = None,
     x_api_key: Optional[str] = Header(default=None),
 ):
     """Upload a PDF and start indexing. Returns doc_id."""
-    provider = model.split("/")[0] if model and "/" in model else None
-    _apply_api_key(x_api_key, provider)
+    # Use explicit provider if sent; fall back to inferring from model string prefix
+    resolved_provider = provider or (model.split("/")[0] if model and "/" in model else None)
+    _apply_api_key(x_api_key, resolved_provider)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files supported")
 

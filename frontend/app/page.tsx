@@ -40,6 +40,7 @@ export default function Home() {
   const sseRef = useRef<EventSource | null>(null);
   const apiKeyRef = useRef<string>("");
   const apiModelRef = useRef<string>("gemini/gemini-2.5-flash");
+  const apiProviderRef = useRef<string>("gemini");
 
   const fetchDocList = useCallback(() => {
     fetch(`${BACKEND}/api/documents`)
@@ -53,9 +54,18 @@ export default function Home() {
   // Load API key/provider/model from sessionStorage on mount (encrypted)
   useEffect(() => {
     const storedProvider = sessionStorage.getItem(API_PROVIDER_STORAGE);
-    if (storedProvider) setApiProvider(storedProvider);
+    if (storedProvider) { setApiProvider(storedProvider); apiProviderRef.current = storedProvider; }
     const storedModel = sessionStorage.getItem(API_MODEL_STORAGE);
-    if (storedModel) { setApiModel(storedModel); apiModelRef.current = storedModel; }
+    if (storedModel) {
+      // Migrate old model values that lack provider prefix (e.g. "gpt-4o" → "openai/gpt-4o")
+      let model = storedModel;
+      if (!model.includes("/") && storedProvider === "openai") {
+        model = `openai/${model}`;
+        sessionStorage.setItem(API_MODEL_STORAGE, model);
+      }
+      setApiModel(model);
+      apiModelRef.current = model;
+    }
     const encKey = sessionStorage.getItem(API_KEY_STORAGE);
     if (encKey) {
       decryptValue(encKey).then((key) => {
@@ -68,6 +78,7 @@ export default function Home() {
     setApiKey(key);
     apiKeyRef.current = key;
     setApiProvider(provider);
+    apiProviderRef.current = provider;
     setApiModel(model);
     apiModelRef.current = model;
     encryptValue(key).then((enc) => sessionStorage.setItem(API_KEY_STORAGE, enc));
@@ -111,6 +122,7 @@ export default function Home() {
       let newDocId: string;
       try {
         if (apiModelRef.current) form.append("model", apiModelRef.current);
+        form.append("provider", apiProviderRef.current);
         const res = await fetch(`${BACKEND}/api/process`, { method: "POST", body: form, headers: apiHeaders() });
         if (!res.ok) throw new Error("Upload failed");
         const data = await res.json();
