@@ -9,10 +9,10 @@ const MODELS: Record<string, { label: string; value: string }[]> = {
     { label: "Gemini 2.5 Pro", value: "gemini/gemini-2.5-pro" },
   ],
   openai: [
-    { label: "GPT-4o", value: "gpt-4o" },
-    { label: "GPT-4o Mini (추천)", value: "gpt-4o-mini" },
-    { label: "GPT-4 Turbo", value: "gpt-4-turbo" },
-    { label: "GPT-3.5 Turbo", value: "gpt-3.5-turbo" },
+    { label: "GPT-4o", value: "openai/gpt-4o" },
+    { label: "GPT-4o Mini (추천)", value: "openai/gpt-4o-mini" },
+    { label: "GPT-4 Turbo", value: "openai/gpt-4-turbo" },
+    { label: "GPT-3.5 Turbo", value: "openai/gpt-3.5-turbo" },
   ],
 };
 

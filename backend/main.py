@@ -308,7 +308,6 @@ async def _sse_stream(doc_id: str) -> AsyncGenerator[str, None]:
 @app.get("/api/progress/{doc_id}")
 async def progress_stream(doc_id: str, api_key: Optional[str] = Query(default=None)):
     """SSE endpoint for indexing progress and tree node streaming."""
-    _apply_api_key(api_key)
     return StreamingResponse(
         _sse_stream(doc_id),
         media_type="text/event-stream",
