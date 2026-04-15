@@ -353,14 +353,14 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat(req: ChatRequest, x_api_key: Optional[str] = Header(default=None)):
     """RAG chat endpoint: tree search + answer generation."""
-    doc_model = documents.get(req.doc_id, {}).get("model", "") if req.doc_id in documents else ""
-    provider = doc_model.split("/")[0] if doc_model and "/" in doc_model else None
-    _apply_api_key(x_api_key, provider)
     if req.doc_id not in documents:
         raise HTTPException(404, "Document not found. Please process a PDF first.")
 
     doc = documents[req.doc_id]
-    opt = ConfigLoader().load()
+    doc_model = doc.get("model", "")
+    provider = doc_model.split("/")[0] if doc_model and "/" in doc_model else None
+    _apply_api_key(x_api_key, provider)
+    opt = ConfigLoader().load({"model": doc_model} if doc_model else None)
     model = opt.model
 
     # Step 1: Get structure (without text to save tokens)
