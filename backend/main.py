@@ -9,7 +9,7 @@ import tempfile
 import uuid
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -175,8 +175,8 @@ async def validate_key(req: ValidateKeyRequest, x_api_key: Optional[str] = Heade
 @app.post("/api/process")
 async def process_pdf(
     file: UploadFile = File(...),
-    model: str = None,
-    provider: str = None,
+    model: Optional[str] = Form(None),
+    provider: Optional[str] = Form(None),
     x_api_key: Optional[str] = Header(default=None),
 ):
     """Upload a PDF and start indexing. Returns doc_id."""
