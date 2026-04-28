@@ -38,22 +38,51 @@ export default function PdfViewer({
   // Load PDF when URL changes
   useEffect(() => {
     if (!pdfUrl) return;
+    let cancelled = false;
+    let loadingTask: any = null;
     const loadPdf = async () => {
       setLoading(true);
       try {
         const pdfjsLib = await import("pdfjs-dist");
-        const doc = await pdfjsLib.getDocument(pdfUrl).promise;
-        setPdfDoc(doc);
+        loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const doc = await loadingTask.promise;
+        if (cancelled) {
+          doc.destroy();
+          return;
+        }
+        setPdfDoc((prev: any) => {
+          if (prev && typeof prev.destroy === "function") prev.destroy();
+          return doc;
+        });
         setNumPages(doc.numPages);
         setCurrentPage(1);
       } catch (err) {
-        console.error("Failed to load PDF:", err);
+        if (!cancelled) console.error("Failed to load PDF:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     loadPdf();
+    return () => {
+      cancelled = true;
+      if (loadingTask && typeof loadingTask.destroy === "function") {
+        try { loadingTask.destroy(); } catch {}
+      }
+    };
   }, [pdfUrl]);
+
+  // Destroy PDF doc on unmount
+  useEffect(() => {
+    return () => {
+      if (renderTaskRef.current) {
+        try { renderTaskRef.current.cancel(); } catch {}
+      }
+      setPdfDoc((prev: any) => {
+        if (prev && typeof prev.destroy === "function") prev.destroy();
+        return null;
+      });
+    };
+  }, []);
 
   // Jump to target page when it changes
   useEffect(() => {
