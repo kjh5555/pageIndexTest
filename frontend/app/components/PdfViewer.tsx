@@ -44,7 +44,12 @@ export default function PdfViewer({
       setLoading(true);
       try {
         const pdfjsLib = await import("pdfjs-dist");
-        loadingTask = pdfjsLib.getDocument(pdfUrl);
+        loadingTask = pdfjsLib.getDocument({
+          url: pdfUrl,
+          cMapUrl: "/cmaps/",
+          cMapPacked: true,
+          standardFontDataUrl: "/standard_fonts/",
+        });
         const doc = await loadingTask.promise;
         if (cancelled) {
           doc.destroy();
