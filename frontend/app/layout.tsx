@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PageIndex Viewer",
   description: "Visualize PageIndex document structures",
+  other: {
+    google: "notranslate",
+  },
 };
 
 export default function RootLayout({
@@ -24,8 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="ko"
+      translate="no"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased notranslate`}
     >
       <body className="h-full flex flex-col">{children}</body>
     </html>
